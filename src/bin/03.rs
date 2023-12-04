@@ -15,8 +15,7 @@ pub fn part_one(input: &str) -> Option<u32> {
 				if adjacent {
 					continue;
 				}
-				let adjacent_characters =
-					get_adjacent(&schematic, current_line, current_character);
+				let adjacent_characters = get_adjacent(&schematic, current_line, current_character);
 
 				adjacent = adjacent_characters
 					.iter()
@@ -114,10 +113,10 @@ fn get_adjacent(
 			if line_index == current_line && character_index == current_character {
 				continue;
 			}
-			if line_index >= current_line - 1
+			if line_index >= current_line.saturating_sub(1)
 				&& line_index <= current_line + 1
-				&& character_index >= current_character - 1
-				&& character_index <= current_character + 1
+				&& character_index >= current_character.saturating_sub(1)
+				&& character_index <= current_character.saturating_add(1)
 			{
 				neighbors.push(c.to_owned());
 			}
@@ -127,15 +126,15 @@ fn get_adjacent(
 }
 
 fn get_schematic(input: &str) -> Vec<Vec<String>> {
-    input
-        .lines()
-        .map(|line| {
-            line.split("")
-                .filter(|s| !s.is_empty())
-                .map(|s| s.to_owned())
-                .collect()
-        })
-        .collect()
+	input
+		.lines()
+		.map(|line| {
+			line.split("")
+				.filter(|s| !s.is_empty())
+				.map(|s| s.to_owned())
+				.collect()
+		})
+		.collect()
 }
 
 #[cfg(test)]
