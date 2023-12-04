@@ -1,4 +1,4 @@
-use std::collections::VecDeque;
+use std::collections::BTreeMap;
 
 advent_of_code::solution!(4);
 
@@ -22,7 +22,7 @@ pub fn part_one(input: &str) -> Option<u32> {
 	let mut sum = 0;
 	let cards = parse_cards(input);
 
-	for card in cards {
+	for (_, card) in cards {
 		let mut current_worth = 0.5;
 
 		for _ in 0..card.matching_card_count() {
@@ -37,67 +37,63 @@ pub fn part_one(input: &str) -> Option<u32> {
 
 pub fn part_two(input: &str) -> Option<u32> {
 	let cards = parse_cards(input);
-	let mut process_cards = VecDeque::from(cards.clone());
+	let mut map = BTreeMap::new();
 	let mut sum = 0;
 
-	while let Some(card) = process_cards.pop_front() {
-		let winning_count = card.matching_card_count();
-		let start = card.card_number;
-		let end = start + winning_count;
+	for (_, card) in cards.iter() {
+		*map.entry(card.card_number).or_insert(0) += 1;
+	}
 
-		let winning_card = cards.get(start as usize..end as usize).unwrap();
-
-		for c in winning_card.iter().rev() {
-			process_cards.push_front(c.clone());
+	for (id, card) in cards.iter() {
+		let count = *map.entry(*id).or_insert(0);
+		sum += count;
+		if count > 0 {
+			for next_id in (id + 1)..=(id + card.matching_card_count()) {
+				*map.entry(next_id).or_insert(0) += count;
+			}
 		}
-		sum += 1;
 	}
 
 	Some(sum)
 }
 
-fn parse_cards(input: &str) -> Vec<Card> {
-	input
-		.lines()
-		.map(|card| {
-			let mut winning_numbers = Vec::new();
-			let mut numbers = Vec::new();
+fn parse_cards(input: &str) -> BTreeMap<u32, Card> {
+	let mut cards = BTreeMap::new();
 
-			let card_number = card
-				.split(": ")
-				.next()
-				.unwrap()
-				.split_ascii_whitespace()
-				.nth(1)
-				.unwrap()
-				.parse::<u32>()
-				.unwrap();
-			let mut card_parts = card.split(": ").nth(1).unwrap().split(" | ");
+	for card in input.lines() {
+		let mut winning_numbers = Vec::new();
+		let mut numbers = Vec::new();
 
-			winning_numbers.extend(
-				card_parts
-					.next()
-					.unwrap()
-					.split(' ')
-					.map(str::trim)
-					.filter_map(|x| x.parse::<u32>().ok()),
-			);
-			numbers.extend(
-				card_parts
-					.next()
-					.unwrap()
-					.split(' ')
-					.map(str::trim)
-					.filter_map(|x| x.parse::<u32>().ok()),
-			);
+		let card_number = card
+			.split(": ")
+			.next()
+			.unwrap()
+			.split_ascii_whitespace()
+			.nth(1)
+			.unwrap()
+			.parse::<u32>()
+			.unwrap();
+		let mut card = card.split(": ").nth(1).unwrap().split(" | ");
 
+		for number in card.next().unwrap().split_ascii_whitespace() {
+			winning_numbers.push(number.parse::<u32>().unwrap());
+		}
+
+		for number in card.next().unwrap().split_ascii_whitespace() {
+			numbers.push(number.parse::<u32>().unwrap());
+		}
+
+		cards.insert(
+			card_number,
 			Card {
 				card_number,
 				winning_numbers,
 				numbers,
-			}
-		})
-		.collect()
+			},
+		);
+	}
+
+	cards
 }
 
 #[cfg(test)]
